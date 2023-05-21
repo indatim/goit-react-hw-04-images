@@ -1,14 +1,29 @@
-const API_KEY = '34822539-414af7ceff62fba527da96994';
-const BASE_URL = 'https://pixabay.com/api/';
+import axios from 'axios';
 
-function fetchImages(requestKey, page) {
-  const url = `${BASE_URL}?q=${requestKey}&page=${page}&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=12`;
-  return fetch(url).then(response => {
-    if (response.ok) {
-      return response.json();
-    }
-    return Promise.reject(new Error('No response from server'));
-  });
+const key = '34822539-414af7ceff62fba527da96994';
+const image_type = 'photo';
+const orientation = 'horizontal';
+
+axios.defaults.baseURL = 'https://pixabay.com/api/';
+axios.defaults.params = {
+  key,
+  image_type,
+  orientation,
+  per_page: 12,
+};
+
+async function fetchImages(requestKey, page) {
+  try {
+    const { data } = await axios({
+      params: {
+        q: requestKey,
+        page,
+      },
+    });
+    return data.hits;
+  } catch (error) {
+    new Error('No response from server');
+  }
 }
 
 const api = { fetchImages };

@@ -3,15 +3,15 @@ import ImageGalleryItem from 'components/ImageGalleryItem/ImageGalleryItem';
 
 import { ImageGalleryContainer } from './ImageGallery.styled';
 
-function ImageGallery({ images }) {
+export default function ImageGallery({ images }) {
   return (
     <ImageGalleryContainer>
-      {images.map((image) => (
+      {images.map(({webformatURL, tags, largeImageURL, id}) => (
         <ImageGalleryItem
-          src={image.webformatURL}
-          alt={image.tags}
-          largeImageUrl={image.largeImageURL}
-          key={image.id}
+          src={webformatURL}
+          alt={tags}
+          largeImageUrl={largeImageURL}
+          key={id}
         />
       ))}
     </ImageGalleryContainer>
@@ -21,5 +21,3 @@ function ImageGallery({ images }) {
 ImageGallery.propTypes = {
   images: PropTypes.array.isRequired,
 };
-
-export default ImageGallery;

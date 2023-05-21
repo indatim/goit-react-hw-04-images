@@ -1,54 +1,48 @@
-import React, { Component } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import PropTypes from 'prop-types';
 
 import { SearchbarContainer, SearchForm, SeacrhFormInput, SearchFormBtn, SearchFormLabel, StyledFaSearch } from './SearchBar.styled';
 
-class Searchbar extends Component {
-  state = {
-    requestKey: '',
-  }
+export default function Searchbar({ onSubmit }) {
+  const [requestKey, setRequestKey] = useState('');
 
-  static propTypes = {
-    onSubmit: PropTypes.func.isRequired,
+  const handleRequestChange = e => {
+    setRequestKey(e.currentTarget.value.toLowerCase());
   };
 
-  handleRequestChange = event => {
-    this.setState({ requestKey: event.currentTarget.value.toLowerCase() });
-  };
+  const handleSubmit = e => {
+    e.preventDefault();
 
-  handleSubmit = event => {
-    event.preventDefault();
-
-    if (this.state.requestKey.trim() === '') {
+    if (requestKey.trim() === '') {
       toast.warn('Please enter something in the field.');
       return;
     }
 
-    this.props.onSubmit(this.state.requestKey);
-    this.setState({ requestKey: '' });
+    onSubmit(requestKey);
+    setRequestKey('');
   };
 
-  render() {
-    return (
-      <SearchbarContainer>
-        <SearchForm onSubmit={this.handleSubmit}>
-          <SearchFormBtn><StyledFaSearch/>
-            <SearchFormLabel>Search</SearchFormLabel>
-          </SearchFormBtn>
-           <SeacrhFormInput
-            type="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-            value={this.state.requestKey}
-            onChange={this.handleRequestChange}
-            />
-        </SearchForm>
-      </SearchbarContainer>
-    )
-  }
+  return (
+    <SearchbarContainer>
+      <SearchForm onSubmit={handleSubmit}>
+        <SearchFormBtn><StyledFaSearch />
+          <SearchFormLabel>Search</SearchFormLabel>
+        </SearchFormBtn>
+        <SeacrhFormInput
+          type="text"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+          value={requestKey}
+          onChange={handleRequestChange}
+        />
+      </SearchForm>
+    </SearchbarContainer>
+  );
 }
 
-export default Searchbar;
+Searchbar.propTypes = {
+  onSubmit: PropTypes.func.isRequired,
+};

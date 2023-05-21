@@ -1,12 +1,13 @@
-import React, { Component } from 'react';
-// import PropTypes from 'prop-types';
+import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { ToastContainer } from 'react-toastify';
 import ScrollToTop from 'react-scroll-to-top';
+import { animateScroll } from 'react-scroll';
 
 import pixabayApi from 'components/pixabay-api';
 
 import ErrorMessage from 'components/ErrorMessage/ErrorMessage';
-import Loader from 'components/Loader/Loader';
+import { Loader } from 'components/Loader/Loader';
 import ImageGallery from 'components/ImageGallery/ImageGallery';
 import LoadMoreButton from 'components/Buttons/LoadMoreButton';
 import Searchbar from 'components/Searchbar/Searchbar';
@@ -17,71 +18,77 @@ const Status = {
   REJECTED: 'rejected',
 };
 
-class App extends Component {
-  state = {
-    error: null,
-    status: 'IDLE',
-    requestKey: '',
-    page: 1,
-    images: [],
-    loading: false,
-  };
+export default function App() {
+  const [error, setError] = useState(null);
+  const [status, setStatus] = useState(Status.IDLE);
+  const [requestKey, setRequestKey] = useState('');
+  const [page, setPage] = useState(1);
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  handleFormSubmit = newRequestKey => {
-    this.setState({ requestKey: newRequestKey, page: 1, images: [] });
-  };
-
-  componentDidUpdate(prevProps, prevState) {
-    const prevName = prevState.requestKey;
-    const nextName = this.state.requestKey;
-
-    if (prevName !== nextName) {
-      this.setState({ loading: true });
-      this.renderImages();
+  const handleFormSubmit = newRequestKey => {
+    if (newRequestKey === requestKey) {
+      return;
     }
-  }
-
-  renderImages = () => {
-    const { requestKey, page } = this.state;
-
-    pixabayApi
-      .fetchImages(requestKey, page)
-      .then(response =>
-        this.setState(prevState => ({
-          images: [...prevState.images, ...response.hits],
-          page: prevState.page + 1,
-        }))
-      )
-      .catch(error => this.setState({ error, status: Status.REJECTED }))
-      .finally(() =>
-        this.setState({ status: Status.RESOLVED, loading: false })
-      );
+    setRequestKey(newRequestKey);
+    setPage(1);
+    setImages([]);
+    setLoading(true);
   };
 
-  render() {
-    const { status, error, loading, images } = this.state;
+  useEffect(() => {
+    if (!requestKey) {
+      return;
+    }
 
-    return (
-      <>
-        <ScrollToTop smooth color="#1a9c00" />
-        <Searchbar onSubmit={this.handleFormSubmit}></Searchbar>
-        <ToastContainer autoClose={2000} />
+    setLoading(true);
 
-        {loading && <Loader />}
+    const renderImages = () => {
 
-        {status === Status.REJECTED && <ErrorMessage message={error.message} />}
+      pixabayApi
+        .fetchImages(requestKey, page)
+        .then(images => setImages(prevState => [...prevState, ...images]))
+        .catch(error => {
+          setError(error);
+          setStatus(Status.REJECTED)
+        })
+        .finally(setTimeout(() => { setStatus(Status.RESOLVED); setLoading(false); }, 500)
+        );
+    };
 
-        {status === Status.RESOLVED && (
-          <>
-            <ImageGallery images={this.state.images} />
-            {images.length >= 12 && (
-              <LoadMoreButton onClick={this.renderImages} />
-            )}
-          </>
-        )}
-      </>
-    );
-  }
+    renderImages();
+    animateScroll.scrollToBottom();
+  }, [requestKey, page]);
+
+  const onLoadMore = () => {
+    setPage(prevState => prevState + 1);
+    setLoading(true);
+  };
+
+  return (
+    <>
+      <ScrollToTop smooth color="#1a9c00" />
+      <Searchbar onSubmit={handleFormSubmit}></Searchbar>
+      <ToastContainer autoClose={2000} />
+
+      {loading && page === 1 ? <Loader /> : null}
+
+      {status === Status.REJECTED && <ErrorMessage message={error.message} />}
+
+      {status === Status.RESOLVED && (
+        <>
+          <ImageGallery images={images} />
+          {loading && page >= 2 ? <Loader /> : null}
+
+          {images.length > 0 && page > 0 ? <LoadMoreButton onClick={onLoadMore} /> : null}
+        </>
+      )}
+    </>
+  );
 }
 
-export default App;
+App.propTypes = {
+  requestKey: PropTypes.string,
+  page: PropTypes.number,
+  images: PropTypes.array,
+};
